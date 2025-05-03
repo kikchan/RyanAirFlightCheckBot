@@ -1,0 +1,17 @@
+{
+  "name": "ryanairhatamatabot",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "",
+  "main": "bot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
