@@ -7,6 +7,4 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-    volumes:
-      - .:/usr/src/app
     command: ["node", "bot.js"]
