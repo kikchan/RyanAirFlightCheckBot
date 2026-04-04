@@ -5,6 +5,9 @@ dotenv.config();
 
 const bot = new TelegramBot(process.env.bot_token, { polling: true });
 
+const N = parseInt(process.env.ADT);
+const adtList = Array.from({length: N}, (_, i) => i + 1);
+
 async function fetchFlightAvailability(adt){
   try {
     const response = await axios.get('https://www.ryanair.com/api/booking/v4/en-gb/availability', {
@@ -12,11 +15,11 @@ async function fetchFlightAvailability(adt){
         ADT: adt,
         CHD: 0,
         DateIn: '',
-        DateOut: '2025-06-26',
-        Destination: 'ALC',
+        DateOut: process.env.DATE_OUT,
+        Destination: process.env.DESTINATION,
         Disc: 0,
         INF: 0,
-        Origin: 'SOF',
+        Origin: process.env.ORIGIN,
         TEEN: 0,
         promoCode: '',
         IncludeConnectingFlights: false,
@@ -33,8 +36,19 @@ async function fetchFlightAvailability(adt){
 
     console.log(`[${getFormattedDateTime()}] Price for ${adt} tickets: ${price}€`);
 
-    if (price <= 50) {
-      await bot.sendMessage(process.env.chat_id, `¡Oferta! ${adt} tickets disponibles al precio de ${price}€.`);
+    if (price <= 90) {
+      const message = process.env.LANGUAGE === 'es' ? `¡Oferta! ${adt} tickets disponibles al precio de ${price}€.` : `Оферта! ${adt} билет(а) за ${price}€ всеки един.`;
+
+      const now = new Date();
+      const hour = now.getHours();
+      const silent = hour >= 23 || hour <= 7;
+
+      if (silent) {
+        const url = `https://api.telegram.org/bot${process.env.bot_token}/sendMessage?chat_id=${process.env.chat_id}&text=${encodeURIComponent(message)}&disable_notification=true`;
+        await axios.post(url);
+      } else {
+        await bot.sendMessage(process.env.chat_id, message);
+      }
     }
 
   } catch (error) {
@@ -54,14 +68,14 @@ const getFormattedDateTime = () => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
-// Innitial call 
-await fetchFlightAvailability(1);
-await fetchFlightAvailability(2);
-await fetchFlightAvailability(3);
+// Initial call 
+for (const adt of adtList) {
+  await fetchFlightAvailability(adt);
+}
 
 // Call the function
-setInterval( async () => {
-  await fetchFlightAvailability(1);
-  await fetchFlightAvailability(2);
-  await fetchFlightAvailability(3);
-}, 1000 * 60 * 15); // Check every 15 minutes
+setInterval(async () => {
+  for (const adt of adtList) {
+    await fetchFlightAvailability(adt);
+  }
+}, 1000 * 60 * parseInt(process.env.CHECK_INTERVAL_MINUTES)); // Check every N minutes
